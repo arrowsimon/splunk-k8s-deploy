@@ -1,0 +1,88 @@
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: ratelimit
+  namespace: splunk
+spec:
+  rateLimit:
+      average: 100
+      burst: 50
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: splunkx-arrowdemo-se
+  namespace: splunk
+spec:
+  entryPoints:
+    - websecure
+  routes:
+  - match: Host(`splunkx.arrowdemo.se`)
+    kind: Rule
+    services:
+    - name: splunk-svc
+      port: 80
+    middlewares:
+    - name: ratelimit
+  tls:
+    certResolver: default
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: splunkxhec-arrowdemo-se
+  namespace: splunk
+spec:
+  entryPoints:
+    - websecure
+  routes:
+  - match: Host(`splunkxhec.arrowdemo.se`)
+    kind: Rule
+    services:
+    - name: splunk-svc
+      port: 8088
+    middlewares:
+    - name: ratelimit
+  tls:
+    certResolver: default
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: splunkxfwd-arrowdemo-se
+  namespace: splunk
+spec:
+  entryPoints:
+    - tcpsecure
+  routes:
+  - match: HostSNI(`splunkxfwd.arrowdemo.se`)
+    kind: Rule
+    services:
+    - name: splunk-svc
+      port: 9997
+    middlewares:
+    - name: ratelimit
+  tls:
+    passthrough: true      
+    certResolver: default
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: splunkxsyslog-arrowdemo-se
+  namespace: splunk
+spec:
+  entryPoints:
+    - tcpsecure
+  routes:
+  - match: HostSNI(`splunkxsys.arrowdemo.se`)
+    kind: Rule
+    services:
+    - name: splunk-svc
+      port: 1514
+    middlewares:
+    - name: ratelimit
+  tls:
+    passthrough: true
+    certResolver: default

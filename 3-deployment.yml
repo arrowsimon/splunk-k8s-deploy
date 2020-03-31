@@ -1,0 +1,49 @@
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  namespace: splunk
+  name: splunk
+  labels:
+    app: splunk
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: splunk
+  template:
+    metadata:
+      labels:
+        app: splunk
+    spec:
+      volumes:
+      - name: opt-splunk-etc-storage
+        persistentVolumeClaim:
+          claimName: opt-splunk-etc
+      - name: opt-splunk-var-storage
+        persistentVolumeClaim:
+          claimName: opt-splunk-var
+      containers:
+        - name: splunk
+          image: splunk/splunk:latest
+          env:
+          - name: SPLUNK_START_ARGS
+            value: --accept-license --answer-yes
+          - name: SPLUNK_PASSWORD
+            value: password  
+          ports:
+            - name: web
+              containerPort: 8000
+            - name: hec
+              containerPort: 8088
+            - name: fwd
+              containerPort: 9997
+            - name: syslog
+              containerPort: 1514  
+          volumeMounts:
+            - mountPath: /opt/splunk/etc
+              name: opt-splunk-etc-storage
+            - mountPath: /opt/splunk/var
+              name: opt-splunk-var-storage
+      imagePullSecrets:
+      - name: docker-store-registry-key
